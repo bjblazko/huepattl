@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/gorilla/mux"
-	"huepattl.de/handlers"
+	"huepattl.de/web/handlers"
 	"log"
 	"net/http"
 )
