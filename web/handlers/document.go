@@ -13,7 +13,6 @@ import (
 	"time"
 )
 
-
 type PageVariables struct {
 	Title      string
 	Content    template.HTML
@@ -28,6 +27,7 @@ func Show(res http.ResponseWriter, req *http.Request) {
 	htmlTemplate, err := template.ParseFiles("web/templates/outerpage.html", "web/templates/document.html")
 	if err != nil {
 		http.Error(res, "Internal Server Error", http.StatusInternalServerError)
+		log.Fatal("Failed to read templates", err)
 		return
 	}
 
