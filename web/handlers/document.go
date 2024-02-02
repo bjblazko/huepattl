@@ -19,10 +19,17 @@ type PageVariables struct {
 	RenderedAt string
 }
 
-func Show(res http.ResponseWriter, req *http.Request) {
+func Document(res http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	name := vars["name"]
 	log.Printf("Requested document '%s'", name)
+
+	staticPages := map[string]string{
+		"404":     "web/static/markdown/404.md",
+		"index":   "web/static/markdown/index.md",
+		"test":    "web/static/markdown/test.md",
+		"imprint": "web/static/markdown/imprint.md",
+	}
 
 	htmlTemplate, err := template.ParseFiles("web/templates/outerpage.html", "web/templates/document.html")
 	if err != nil {
@@ -31,7 +38,12 @@ func Show(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	testMarkdown, err := readFileToString("test/resources/document.md")
+	staticFile, found := staticPages[name]
+	if !found {
+		staticFile = staticPages["404"]
+	}
+
+	testMarkdown, err := readFileToString(staticFile)
 	if err != nil {
 		http.Error(res, "Internal Server Error", http.StatusInternalServerError)
 		log.Fatal("Failed to read test file", err)

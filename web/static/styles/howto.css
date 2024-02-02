@@ -1,0 +1,44 @@
+body {
+    background-color: ghostwhite;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+}
+
+.logo {
+    margin-right: 10px; /* Adjust the margin as needed */
+}
+
+.logo-rounded {
+    border-radius: 50%; /* Use 50% for a circular border */
+}
+
+nav ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    display: flex; /* Use flexbox to make the list items horizontal */
+}
+
+/* Style each list item */
+nav li {
+    margin-right: 10px; /* Add some spacing between the list items */
+}
+
+nav a {
+    font-weight: bold;
+}
+
+nav a::before {
+    content: "[";
+}
+
+nav a::after {
+    content: "]";
+}
+
+footer {
+    font-size: smaller;
+}
