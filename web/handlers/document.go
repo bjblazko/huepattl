@@ -29,6 +29,7 @@ func Document(res http.ResponseWriter, req *http.Request) {
 		"index":   "web/static/markdown/index.md",
 		"test":    "web/static/markdown/test.md",
 		"imprint": "web/static/markdown/imprint.md",
+		"blog":    "web/static/markdown/blog.md",
 	}
 
 	htmlTemplate, err := template.ParseFiles("web/templates/outerpage.html", "web/templates/document.html")

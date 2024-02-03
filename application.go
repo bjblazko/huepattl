@@ -25,7 +25,7 @@ func setupRoutes(router *mux.Router) {
 	router.PathPrefix("/static/").Handler(http.StripPrefix(staticDir, http.FileServer(http.Dir("web/static"))))
 
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/doc/index", http.StatusFound)
+		http.Redirect(w, r, "/doc/blog", http.StatusFound)
 	}).Methods("GET")
 
 	router.HandleFunc("/imprint", func(w http.ResponseWriter, r *http.Request) {
