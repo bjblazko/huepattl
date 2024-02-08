@@ -6,8 +6,12 @@ import (
 	"context"
 	"fmt"
 	"google.golang.org/api/iterator"
-	"log"
 )
+
+type Connection struct {
+	Client  *bigquery.Client
+	Context context.Context
+}
 
 type BigQueryTable struct {
 	ProjectId string
@@ -20,27 +24,33 @@ type Entry struct {
 	DateTime   civil.DateTime `bigquery:"date"`
 	AuthorName string         `bigquery:"author"`
 	Title      string         `bigquery:"title"`
-	Preview    string         `bigquery:"preview"`
-	Bucket     string         `bigquery:"bucket"`
-	Filename   string         `bigquery:"filename"`
+	Text       string         `bigquery:"text"`
+}
+
+func CreateClient(projectId string) (Connection, error) {
+	ctx := context.Background()
+	client, err := bigquery.NewClient(ctx, projectId)
+	if err != nil {
+		//return nil, err
+	}
+	conn := Connection{
+		Context: ctx,
+		Client:  client,
+	}
+	defer client.Close()
+	return conn, nil
 }
 
 // Lists all blog entries from the blog index, sorted from newest
 // at the beginning.
-func List(table BigQueryTable) ([]Entry, error) {
+func List(connection Connection, table BigQueryTable) ([]Entry, error) {
 	var results []Entry
 
-	log.Println("load all blogs...")
-	ctx := context.Background()
-
-	client, err := bigquery.NewClient(ctx, table.ProjectId)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create BigQuery client: %v", err)
-	}
-	defer client.Close()
-
-	query := client.Query(fmt.Sprintf("SELECT * FROM %s.%s", table.Dataset, table.Table))
-	it, err := query.Read(ctx)
+	query := connection.Client.Query(fmt.Sprintf(
+		"SELECT * FROM `%s.%s` ORDER BY date DESC LIMIT 1000",
+		table.Dataset, table.Table),
+	)
+	it, err := query.Read(connection.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to run query: %v", err)
 	}
@@ -60,29 +70,18 @@ func List(table BigQueryTable) ([]Entry, error) {
 	return results, nil
 }
 
-func Insert(entries []*Entry, table BigQueryTable) (int, error) {
-	ctx := context.Background()
-	client, err := bigquery.NewClient(ctx, table.ProjectId)
-	if err != nil {
-		return 0, fmt.Errorf("bigquery.NewClient: %w", err)
-	}
-	defer client.Close()
-
-	inserter := client.Dataset(table.Dataset).Table(table.Table).Inserter()
-	if err := inserter.Put(ctx, entries); err != nil {
+func Insert(entries []*Entry, connection Connection, table BigQueryTable) (int, error) {
+	inserter := connection.Client.Dataset(table.Dataset).Table(table.Table).Inserter()
+	if err := inserter.Put(connection.Context, entries); err != nil {
 		return 0, err
 	}
 
 	return len(entries), nil
 }
 
-func DeleteTable(table BigQueryTable) error {
-	ctx := context.Background()
-	client, err := bigquery.NewClient(ctx, table.ProjectId)
-	if err != nil {
-		return err
-	}
-	err = client.Dataset(table.Dataset).Table(table.Table).Delete(ctx)
+func DeleteTable(connection Connection, table BigQueryTable) error {
+	err := connection.Client.Dataset(table.Dataset).Table(table.Table).
+		Delete(connection.Context)
 	if err != nil {
 		return err
 	}
@@ -90,22 +89,12 @@ func DeleteTable(table BigQueryTable) error {
 	return nil
 }
 
-func CreateTable(table BigQueryTable) error {
-	ctx := context.Background()
-
-	client, err := bigquery.NewClient(ctx, table.ProjectId)
-	if err != nil {
-		return err
-	}
-	defer client.Close()
-
+func CreateTable(connection Connection, table BigQueryTable) error {
 	schema := bigquery.Schema{
-		{Name: "date", Type: bigquery.DateFieldType, Required: true},
+		{Name: "date", Type: bigquery.DateTimeFieldType, Required: true},
 		{Name: "author", Type: bigquery.StringFieldType, Required: true},
 		{Name: "title", Type: bigquery.StringFieldType, Required: true},
-		{Name: "preview", Type: bigquery.StringFieldType, Required: true},
-		{Name: "bucket", Type: bigquery.StringFieldType, Required: true},
-		{Name: "filename", Type: bigquery.StringFieldType, Required: true},
+		{Name: "text", Type: bigquery.StringFieldType, Required: true},
 	}
 
 	// Create table metadata
@@ -113,7 +102,8 @@ func CreateTable(table BigQueryTable) error {
 		Schema: schema,
 	}
 
-	if err := client.Dataset(table.Dataset).Table(table.Table).Create(ctx, metadata); err != nil {
+	if err := connection.Client.Dataset(table.Dataset).Table(table.Table).
+		Create(connection.Context, metadata); err != nil {
 		return err
 	}
 	return nil
