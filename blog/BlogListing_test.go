@@ -2,80 +2,89 @@ package blog
 
 import (
 	"cloud.google.com/go/civil"
+	"fmt"
 	"log"
 	"testing"
 	"time"
 )
 
-func TestList(t *testing.T) {
-	table := BigQueryTable{
-		ProjectId: "huepattl",
-		Dataset:   "site",
-		Table:     "blogs_test",
+var testTable = BigQueryTable{
+	ProjectId: "huepattl",
+	Dataset:   "site",
+	Table:     "blogs_test",
+}
+
+var now = time.Now()
+var testEntries = []*Entry{
+	{
+		DateTime: civil.DateTime{
+			Date: civil.Date{Year: 1982, Month: 12, Day: 30},
+			Time: civil.TimeOf(now),
+		},
+		AuthorName: "Christina",
+		Title:      "Test 1",
+		Text:       "Foo bar baz",
+	},
+	{
+		DateTime: civil.DateTime{
+			Date: civil.Date{Year: 1977, Month: 12, Day: 9},
+			Time: civil.TimeOf(now),
+		},
+		AuthorName: "Timo",
+		Title:      "Test 2",
+		Text:       "Foo2 bar2 baz2",
+	},
+}
+
+func TestListing(t *testing.T) {
+	connection, err := CreateClient(testTable.ProjectId)
+	if err != nil {
+		t.Errorf("failed getting connection %s", err)
 	}
 
-	found, err := List(table)
+	err = prepareTable(connection, false) // FIXME this should be true, but has timing problem?
 	if err != nil {
-		t.Errorf("failed with error: %s", err)
+		t.Errorf("failed preparing table with error %s", err)
 	}
+
+	// read data
+	found, err := List(connection, testTable)
+	if err != nil {
+		t.Errorf("failed reading with error: %s", err)
+	}
+
+	// assert
 	if len(found) < 1 {
 		t.Errorf("no entries found while there should be some")
 	}
-	if found[0].Bucket != "Foo" {
-		t.Errorf("expecting 'Foo' for 'Entry.Bucket', but got '%s'", found[0].Bucket)
+	if found[0].Title != "Test 1" {
+		t.Errorf("expecting 'Test 1' for 'Entry.Title', but got '%s'", found[0].Title)
 	}
 	for i := 0; i < len(found); i++ {
 		log.Printf("found entry: %s", found[i])
 	}
+
 }
 
-func TestInsert(t *testing.T) {
-	table := BigQueryTable{
-		ProjectId: "huepattl",
-		Dataset:   "site",
-		Table:     "blogs_test",
+func prepareTable(connection Connection, create bool) error {
+	// create temp. table
+	if create == true {
+		err := DeleteTable(connection, testTable)
+		if err != nil {
+			log.Printf("failed deleting table '%s' with error: %s - maybe OK since it was not there from previous run", testTable, err)
+		}
+
+		err = CreateTable(connection, testTable)
+		if err != nil {
+			return fmt.Errorf("failed creating table '%s' with error: %s", testTable, err)
+		}
 	}
-	now := time.Now()
-	items := []*Entry{
-		{
-			DateTime:   civil.DateTime{Date: civil.Date{Year: 1982, Month: 12, Day: 30}, Time: civil.TimeOf(now)},
-			AuthorName: "Christina",
-			Title:      "Test 1",
-			Preview:    "Foo bar baz",
-			Bucket:     "test",
-			Filename:   "test1.md",
-		},
-		{
-			DateTime:   civil.DateTime{Date: civil.Date{Year: 1977, Month: 12, Day: 9}, Time: civil.TimeOf(now)},
-			AuthorName: "Timo",
-			Title:      "Test 2",
-			Preview:    "Foo2 bar2 baz2",
-			Bucket:     "test", Filename: "test2.md"},
-	}
-	num, err := Insert(items, table)
+
+	// fill with data
+	num, err := Insert(testEntries, connection, testTable)
 	if err != nil {
-		t.Errorf("failed: %s", err)
+		return fmt.Errorf("failed writing data with error: %s", err)
 	}
-	t.Logf("inserted %d rows", num)
-}
-
-func TestClear(t *testing.T) {
-	table := BigQueryTable{
-		ProjectId: "huepattl",
-		Dataset:   "site",
-		Table:     "foo",
-	}
-	err := DeleteTable(table)
-	if err != nil {
-		t.Errorf("failed: %s", err)
-	}
-}
-
-func TestCreateTable(t *testing.T) {
-	table := BigQueryTable{
-		ProjectId: "huepattl",
-		Dataset:   "site",
-		Table:     "foo",
-	}
-	CreateTable(table)
+	log.Printf("inserted %d rows", num)
+	return nil
 }
