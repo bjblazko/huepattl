@@ -1,0 +1,12 @@
+{{define "content"}}
+<article>
+    <p>Blog</p>
+    {{ range .Blogs }}
+    <article>
+        <h2>{{ .Title }}</h2>
+        <p><em>Author: {{ .AuthorName }}</em></p>
+        <p>{{ .Text }}</p>
+    </article>
+    {{ end }}
+</article>
+{{end}}
