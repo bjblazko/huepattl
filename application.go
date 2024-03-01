@@ -25,11 +25,11 @@ func setupRoutes(router *mux.Router) {
 	staticDir := "/static/"
 	router.PathPrefix("/static/").Handler(http.StripPrefix(staticDir, http.FileServer(http.Dir("web/static"))))
 
-	router.HandleFunc("/blog", blog.HandleBlogGetRequest).Methods("GET")
-	router.HandleFunc("/blog/{entry}", blog.HandleBlogGetRequest).Methods("GET")
+	router.HandleFunc("/blog", blog.HandleBlogListGetRequest).Methods("GET")
+	router.HandleFunc("/blog/{entry}", blog.HandleBlogEntryGetRequest).Methods("GET")
 
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/doc/blog", http.StatusFound)
+		http.Redirect(w, r, "/blog", http.StatusFound)
 	}).Methods("GET")
 
 	router.HandleFunc("/imprint", func(w http.ResponseWriter, r *http.Request) {
