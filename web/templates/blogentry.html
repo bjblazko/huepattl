@@ -1,0 +1,8 @@
+{{define "content"}}
+<article>
+    <h1><a href="/blog">Timo's Blog</a></h1>
+    <h2>{{ .Entry.Title }}</h2>
+    <p>by {{ .Entry.Author }} posted at {{ .Entry.Date }}</p>
+    {{ .Text }}
+</article>
+{{end}}
