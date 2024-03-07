@@ -1,6 +1,7 @@
-package blog
+package index
 
 import (
+	"huepattl.de/blog"
 	"testing"
 	"time"
 )
@@ -10,7 +11,7 @@ var testRepo = RepositoryProperties{
 	Collection: "blogs_test",
 }
 
-var entries = []*BlogEntry{
+var entries = []*blog.Entry{
 	{
 		Id:         "hello-world",
 		Date:       time.Date(1977, 12, 9, 14, 35, 0, 0, time.UTC),

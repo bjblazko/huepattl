@@ -1,18 +1,19 @@
-package blog
+package index
 
 import (
 	"html/template"
+	"huepattl.de/blog"
 	"huepattl.de/web/handlers"
 	"log"
 	"net/http"
 )
 
-type BlogListPageVariables struct {
+type PageVariables struct {
 	handlers.PageVariables
-	Blogs []BlogEntry
+	Blogs []blog.Entry
 }
 
-func HandleBlogListGetRequest(res http.ResponseWriter, req *http.Request) {
+func GetRequest(res http.ResponseWriter, req *http.Request) {
 	log.Printf("Requested blog listing...")
 	message := "OK"
 
@@ -24,7 +25,7 @@ func HandleBlogListGetRequest(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	htmlTemplate, err := template.ParseFiles("web/templates/outerpage.html", "web/templates/bloglist.html")
+	htmlTemplate, err := template.ParseFiles("common/outerpage.html", "blog/index/page.html")
 	if err != nil {
 		message = "Failed to read templates"
 		log.Print(message, err)
@@ -32,7 +33,7 @@ func HandleBlogListGetRequest(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	pageVariables := BlogListPageVariables{
+	pageVariables := PageVariables{
 		PageVariables: handlers.PageVariables{
 			Title:      "Blog",
 			Content:    "ignore",
@@ -53,7 +54,7 @@ func HandleBlogListGetRequest(res http.ResponseWriter, req *http.Request) {
 	return
 }
 
-func list() ([]BlogEntry, error) {
+func list() ([]blog.Entry, error) {
 	datasource := RepositoryProperties{ProjectId: "huepattl", Collection: "blogs"}
 
 	return List(datasource)

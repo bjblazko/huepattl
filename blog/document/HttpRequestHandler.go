@@ -1,27 +1,29 @@
-package blog
+package document
 
 import (
 	"github.com/gorilla/mux"
 	"html/template"
+	"huepattl.de/blog"
+	"huepattl.de/blog/index"
 	"huepattl.de/common"
 	"huepattl.de/web/handlers"
 	"log"
 	"net/http"
 )
 
-type BlogEntryPageVariables struct {
+type PageVariables struct {
 	handlers.PageVariables
-	Entry BlogEntry
+	Entry blog.Entry
 	Text  template.HTML
 }
 
-func HandleBlogEntryGetRequest(res http.ResponseWriter, req *http.Request) {
+func GetRequest(res http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	entryId := vars["entry"]
 	log.Printf("Requested blog entry '%s'...", entryId)
 	message := "OK"
 
-	found, err := FindById(RepositoryProperties{
+	found, err := index.FindById(index.RepositoryProperties{
 		ProjectId:  "huepattl",
 		Collection: "blogs",
 	}, entryId)
@@ -40,7 +42,7 @@ func HandleBlogEntryGetRequest(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	var pageVariables = BlogEntryPageVariables{
+	var pageVariables = PageVariables{
 		PageVariables: handlers.PageVariables{
 			Title:      "Blog",
 			Content:    "ignore",
@@ -49,7 +51,7 @@ func HandleBlogEntryGetRequest(res http.ResponseWriter, req *http.Request) {
 		Entry: *found,
 	}
 
-	htmlTemplate, err := template.ParseFiles("web/templates/outerpage.html", "web/templates/blogentry.html")
+	htmlTemplate, err := template.ParseFiles("common/outerpage.html", "blog/document/page.html")
 	if err != nil {
 		message = "Failed to read templates"
 		log.Print(message, err)
